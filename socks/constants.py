@@ -1,71 +1,44 @@
 BUFFER_SIZE = 4096
 
 
-class Identifier:
-    @staticmethod
-    def VERSION():
-        return 5
-
-    @staticmethod
-    def AUTHENTICATE_VERSION() -> int:
-        return 1
-
-    @staticmethod
-    def REGISTER_VERSION():
-        return 2
+class General:
+    VERSION = 5
+    AUTHENTICATION_VERSION = 1
+    REGISTER_VERSION = 2
+    MODIFIED_VERSION = 3
 
 
 class Method:
-    @staticmethod
-    def NO_AUTHENTICATION_REQUIRED():
-        return 0
-
-    @staticmethod
-    def GSSAPI():
-        return 1
-
-    @staticmethod
-    def USERNAME_PASSWORD():
-        return 2
-
-    @staticmethod
-    def NO_ACCEPTABLE_METHODS():
-        return 255
+    NO_AUTHENTICATION_REQUIRED = 0
+    GSSAPI = 1
+    USERNAME_PASSWORD = 2
+    NO_ACCEPTABLE_METHOD = 255
 
 
 class Command:
-    @staticmethod
-    def CONNECT():
-        return 1
-
-    @staticmethod
-    def BIND():
-        return 2
-
-    @staticmethod
-    def UDP_ASSOCIATED():
-        return 3
+    CONNECT = 1
+    BIND = 2
+    UDP_ASSOCIATED = 3
 
 
 class AddressType:
-    @staticmethod
-    def IPV4():
-        return 1
-
-    @staticmethod
-    def DOMAINNAME():
-        return 3
-
-    @staticmethod
-    def IPV6():
-        return 4
+    IPV4 = 1
+    DOMAINNAME = 3
+    IPV6 = 4
 
 
 class AuthenticationStatus:
-    @staticmethod
-    def SUCCESS():
-        return 0
+    SUCCESS = 0
+    FAILURE = 1
 
-    @staticmethod
-    def FAILURE():
-        return 1
+
+class ReplyStatus:
+    SUCCEED = 0
+    GENERAL_SOCKS_SERVER_FAILURE = 1
+    CONNECTION_NOT_ALLOWED_BY_RULESET = 2
+    NETWORK_UNREACHABLE = 3
+    HOST_UNREACHABLE = 4
+    CONNECTION_REFUSED = 5
+    TTL_EXPIRED = 6
+    COMMAND_NOT_SUPPORTED = 7
+    ADDRESS_TYPE_NOT_SUPPORTED = 8

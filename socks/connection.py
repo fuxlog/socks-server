@@ -1,4 +1,4 @@
-from .constants import BUFFER_SIZE, Identifier, Method
+from .constants import BUFFER_SIZE, General, Method
 from .session import Session
 from .request import ConnectionRequest
 from .reply import ConnectionReply
@@ -11,14 +11,14 @@ def validate(version, methods) -> int:
     Server only use USERNAME/PASSWORD for authenticate or register method.
 
     """
-    if version != Identifier.VERSION():
-        return Method.NO_ACCEPTABLE_METHODS()
+    if version != General.VERSION:
+        return Method.NO_ACCEPTABLE_METHODS
     
-    if Method.USERNAME_PASSWORD() in methods:
-        return Method.USERNAME_PASSWORD()
+    if Method.USERNAME_PASSWORD in methods:
+        return Method.USERNAME_PASSWORD
 
     else:
-        return Method.NO_ACCEPTABLE_METHODS()
+        return Method.NO_ACCEPTABLE_METHODS
 
 
 class Connection:
@@ -33,13 +33,13 @@ class Connection:
             method_chosen = validate(request.version, request.methods)                
             reply = ConnectionReply(version=request.version, method=method_chosen)
             self.session.client.sendall(reply.to_bytes())
-            if method_chosen == Method.NO_ACCEPTABLE_METHODS():
+            if method_chosen == Method.NO_ACCEPTABLE_METHODS:
                 self.session.client.close()
                 return False
             return True
 
         # Request format is not acceptable according to SOCKS5
-        reply = ConnectionReply(version=Identifier.VERSION(), method=Method.NO_ACCEPTABLE_METHODS())
+        reply = ConnectionReply(version=General.VERSION, method=Method.NO_ACCEPTABLE_METHODS)
         self.session.client.sendall(reply.to_bytes())
         self.session.client.close()
         return False
