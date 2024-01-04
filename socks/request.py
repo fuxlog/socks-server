@@ -1,6 +1,58 @@
+from .constants import General, AddressType, Command, ReplyStatus
+from .utils import str_address, int_port
+
+
 class Request:
-    def cook():
-        pass
+    def __init__(self):
+        self.version = None
+        self.command = None
+        self.reserved = None
+        self.address_type = None
+        self.destination_host = None
+        self.destination_port = None
+
+
+    def from_bytes(self, data: bytes):
+        if len(data) < 9 or len(data) > 260:
+            return ReplyStatus.GENERAL_SOCKS_SERVER_FAILURE
+        
+        self.version = data[0]
+        if self.version != General.VERSION:
+            return ReplyStatus.GENERAL_SOCKS_SERVER_FAILURE
+
+        self.command = data[1]
+        if self.command != Command.CONNECT and self.command != Command.BIND and self.command != Command.UDP_ASSOCIATED:
+            return ReplyStatus.COMMAND_NOT_SUPPORTED
+
+        self.reserved = data[2]
+        if self.reserved != 0:
+            return ReplyStatus.GENERAL_SOCKS_SERVER_FAILURE
+        
+        self.address_type = data[3]
+
+        ldata = len(data)
+        if self.address_type == AddressType.IPV4:
+            if ldata != 10:
+                return ReplyStatus.GENERAL_SOCKS_SERVER_FAILURE
+            self.destination_host = str_address(data[4:8], self.address_type)
+            self.destination_port = int_port(data[8:10])
+        elif self.address_type == AddressType.IPV6:
+            if ldata != 22:
+                return ReplyStatus.GENERAL_SOCKS_SERVER_FAILURE
+            self.destination_host = str_address(data[4:20], self.address_type)
+            self.destination_port = int_port(data[20:22])
+        elif self.address_type == AddressType.DOMAINNAME:
+            ldomain = data[4]
+            if ldata != 7 + ldomain:
+                return ReplyStatus.GENERAL_SOCKS_SERVER_FAILURE
+            self.destination_host = str_address(data[4:5+ldomain], self.address_type)
+            self.destination_port = int_port(data[ldata-2:ldata])
+        else:
+            return ReplyStatus.ADDRESS_TYPE_NOT_SUPPORTED
+        
+        return ReplyStatus.SUCCEEDED
+
+
 
 
 class ConnectionRequest(Request):

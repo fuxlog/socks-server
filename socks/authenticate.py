@@ -1,8 +1,8 @@
 from .session import Session
-from .constants import BUFFER_SIZE, Identifier, AuthenticationStatus
+from .constants import BUFFER_SIZE, General, AuthenticationStatus
 from .request import AuthenticationRequest
 from .reply import AuthenticationReply
-from .db import verify_account
+from .db import verify_account, save_account
 
 
 class Authentication:
@@ -26,14 +26,30 @@ class UsernamePasswordAuthentication(Authentication):
         data = self.session.client.recv(BUFFER_SIZE)
         request = AuthenticationRequest()
         if request.from_bytes(data) is True:
-            if request.version == Identifier.AUTHENTICATE_VERSION():
+            if request.version == General.AUTHENTICATION_VERSION:
                 status = verify_account(request.uname, request.pword)
                 if status:
-                    reply = AuthenticationReply(request.version, AuthenticationStatus.SUCCESS())
+                    reply = AuthenticationReply(request.version, AuthenticationStatus.SUCCESS)
                     self.session.client.sendall(reply.to_bytes())
                     return True
 
-        reply = AuthenticationReply(Identifier.AUTHENTICATE_VERSION(), AuthenticationStatus.FAILURE())
+                reply = AuthenticationReply(request.version, AuthenticationStatus.FAILURE)   
+                
+                
+            if request.version == General.REGISTER_VERSION:
+                status = save_account(request.uname, request.pword)
+                if status == 1:
+                    reply = AuthenticationReply(request.version, AuthenticationStatus.SUCCESS)
+                    self.session.client.sendall(reply.to_bytes())
+                    return True
+                
+                elif status == 2:
+                    reply = AuthenticationReply(request.version, AuthenticationStatus.FAILURE)
+                    self.session.client.sendall(reply.to_bytes())
+                    return False
+
+
+        reply = AuthenticationReply(General.AUTHENTICATION_VERSION, AuthenticationStatus.FAILURE)
         self.session.client.sendall(reply.to_bytes())
         self.session.client.close()
         return False

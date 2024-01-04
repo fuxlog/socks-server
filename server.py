@@ -3,7 +3,9 @@ import threading
 from socks.connection import Connection
 from socks.session import Session
 from socks.authenticate import UsernamePasswordAuthentication
+from socks.command import handle_request
 from config import SERVER_HOST, SERVER_PORT, SERVER_BACKLOG
+
 
 
 def handle_client(client, address):
@@ -14,14 +16,18 @@ def handle_client(client, address):
     if connection.connect() is True:
         session.notify_connection_success
         authentication = UsernamePasswordAuthentication(session)
-        if authentication.authenticate() is True:
+        session.is_auth = authentication.authenticate()
+        # session.is_auth = True
+        if session.is_auth is True:
             session.notify_authentication_success()
+            handle_request(session)
         else:
             session.notify_authentication_failed()
             return
     else:
         session.notify_connection_failed()    
         return
+
 
 def run(server_address):
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

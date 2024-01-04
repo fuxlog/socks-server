@@ -29,22 +29,15 @@ def save_account(username: str, password: str) -> int:
     account = find_account_by_username(username)
     if account is not None:
         return 2
-
-
-def save_account1(username: str, password: str) -> Account:
+    
     connection = sqlite3.connect(STORAGE)
     cursor = connection.cursor()
     query = "INSERT INTO account (username, password) VALUES (?, ?)"
     params = (username, password)
-
-    if find_account_by_username(username) is not None:
-        connection.close()
-        return None
-
-    result = cursor.execute(query, params)
+    cursor.execute(query, params)
     connection.commit()
     connection.close()
-    return Account(result[0], result[1], result[2], result[3])
+    return 1
 
 
 def verify_account(username, password):
@@ -56,3 +49,4 @@ def verify_account(username, password):
             return True
         else:
             return False
+
