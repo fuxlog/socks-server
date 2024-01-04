@@ -32,7 +32,8 @@ class UsernamePasswordAuthentication(Authentication):
                     reply = AuthenticationReply(request.version, AuthenticationStatus.SUCCESS)
                     self.session.client.sendall(reply.to_bytes())
                     return True
-                
+
+                reply = AuthenticationReply(request.version, AuthenticationStatus.FAILURE)   
                 
                 
             if request.version == General.REGISTER_VERSION:
