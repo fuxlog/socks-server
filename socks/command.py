@@ -1,10 +1,9 @@
-
 import socket
 import errno
 import select
 from .request import Request
 from .reply import Reply
-from .constants import BUFFER_SIZE, AddressType, ReplyStatus
+from .constants import BUFFER_SIZE, AddressType, ReplyStatus, Command
 from .session import Session
 
 
@@ -20,12 +19,32 @@ def handle_request(conn: socket.socket, session: Session):
         conn.sendall(reply)
         return False
 
-    if cmd == 1:
-        command = ConnectCommand(conn, dst_addr, dst_port)
+    if cmd == Command.CONNECT:
+        command = ConnectCommand(conn, atyp, dst_addr, dst_port)
         rep = command.connect_dst()
         reply = Reply(ver, rep, rsv, atyp, dst_addr, dst_port).encode()
         conn.sendall(reply)
         command.forward()
+
+    elif cmd == Command.BIND:
+        first_reply = (ver, command, rsv, dst_addr, dst_port).encode()
+        conn.sendall(first_reply)
+
+        command = ConnectCommand(conn, atyp, dst_addr, dst_port)
+        rep = command.connect_dst()
+
+        if rep == ReplyStatus.SUCCEEDED():
+            second_reply = (ver, rep, rsv).encode()
+            conn.sendall(second_reply)
+            command.forward()
+
+        else:
+            second_reply = (ver, rep, rsv).encode()
+            conn.sendall(second_reply)
+            command.forward()
+
+    elif cmd == Command.UDP_ASSOCIATED:
+        pass
 
     return True
 
@@ -57,9 +76,11 @@ class ConnectCommand:
             elif self.atyp == AddressType.DOMAINNAME():
                 self.dst_addr = socket.gethostbyname(self.dst_addr)
                 target = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
             target.connect((self.dst_addr, self.dst_port))
             self.target_socket = target
             return ReplyStatus.SUCCEEDED()
+        
         except socket.error as e:
             if isinstance(e, socket.timeout):
                 return ReplyStatus.TTL_EXPIRED

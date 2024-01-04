@@ -1,7 +1,7 @@
 from .constants import BUFFER_SIZE, General, Method
 from .session import Session
-from .request import ConnectionRequest
-from .reply import ConnectionReply
+from .request import ConnectionRequest, Request
+from .reply import ConnectionReply, Reply
 
 
 def validate(version, methods) -> int:
@@ -27,8 +27,8 @@ class Connection:
 
     def connect(self):
         data = self.session.client.recv(BUFFER_SIZE)
-
         request = ConnectionRequest()
+
         if request.from_bytes(data):
             method_chosen = validate(request.version, request.methods)                
             reply = ConnectionReply(version=request.version, method=method_chosen)
@@ -43,3 +43,19 @@ class Connection:
         self.session.client.sendall(reply.to_bytes())
         self.session.client.close()
         return False
+
+
+
+class Bind:
+    def __init__(self, session: Session):
+        self.session = session
+
+    def bind(self):
+        data = self.session.client.recv(BUFFER_SIZE)
+        request = Request()
+
+        if request.from_bytes(data):
+            reply = Reply(request.version, 0, 0, request.dst_addr, request.dst_port)
+            self.session.client.sendall(reply.to_bytes())
+            return True
+
