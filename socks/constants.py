@@ -32,8 +32,15 @@ class AuthenticationStatus:
     FAILURE = 1
 
 
+class RegisterStatus:
+    SUCCESS = 0
+    USERNAME_IS_EXISTED = 1
+    INVALID_USERNAME_PASSWORD = 2
+
+
+
 class ReplyStatus:
-    SUCCEED = 0
+    SUCCEEDED = 0
     GENERAL_SOCKS_SERVER_FAILURE = 1
     CONNECTION_NOT_ALLOWED_BY_RULESET = 2
     NETWORK_UNREACHABLE = 3
