@@ -1,5 +1,13 @@
 class Request:
-    def cook():
+    def __init__(self):
+        self.version = None
+        self.command = None
+        self.reserved = None
+        self.address_type = None
+        self.destination_host = None
+        self.destination_port = None
+
+    def from_bytes(self, data: bytes):
         pass
 
 
