@@ -29,6 +29,16 @@ def save_account(username: str, password: str) -> int:
     account = find_account_by_username(username)
     if account is not None:
         return 2
+    
+    connection = sqlite3.connect(STORAGE)
+    cursor = connection.cursor()
+    query = "INSERT INTO account (username, password) VALUES (?, ?)"
+    params = (username, password)
+
+    result = cursor.execute(query, params)
+    connection.commit()
+    connection.close()
+    return 1
 
 
 def save_account1(username: str, password: str) -> Account:
