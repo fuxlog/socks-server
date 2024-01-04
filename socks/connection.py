@@ -27,6 +27,7 @@ class Connection:
 
     def connect(self):
         data = self.session.client.recv(BUFFER_SIZE)
+        print(data)
 
         request = ConnectionRequest()
         if request.from_bytes(data):
@@ -39,7 +40,7 @@ class Connection:
             return True
 
         # Request format is not acceptable according to SOCKS5
-        reply = ConnectionReply(version=General.VERSION, method=Method.NO_ACCEPTABLE_METHODS)
+        reply = ConnectionReply(version=General.VERSION, method=Method.NO_ACCEPTABLE_METHOD)
         self.session.client.sendall(reply.to_bytes())
         self.session.client.close()
         return False

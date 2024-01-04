@@ -4,27 +4,35 @@ import errno
 import select
 from .request import Request
 from .reply import Reply
-from .constants import BUFFER_SIZE, AddressType, ReplyStatus
+from .constants import BUFFER_SIZE, AddressType, ReplyStatus, Command, ReplyStatus
 from .session import Session
 
 
-def handle_request(conn: socket.socket, session: Session):
-    request = conn.recv(BUFFER_SIZE)
-    if len(request) == 0:
+def handle_request(session: Session):
+    data = session.client.recv(BUFFER_SIZE)
+    if len(data) == 0:
         print(f"[INFO] {session.addr} closed connection")
         return False
 
-    ver, cmd, rsv, atyp, dst_addr, dst_port = Request(request).decode()
+    request = Request()
+    check_request_status = request.from_bytes(data)
     if not session.is_auth:
-        reply = Reply(ver, ReplyStatus.CONNECTION_NOT_ALLOWED_BY_RULESET, rsv, atyp, dst_addr, dst_port).encode()
-        conn.sendall(reply)
+        reply = Reply(request.version, ReplyStatus.CONNECTION_NOT_ALLOWED_BY_RULESET, 
+                      request.reserved, request.address_type, request.destination_host, request.destination_port)
+        session.client.sendall(reply.to_bytes())
+        return False
+    
+    if check_request_status != ReplyStatus.SUCCEEDED:
+        reply = Reply(request.version, check_request_status, 
+                      request.reserved, request.address_type, request.destination_host, request.destination_port)
+        session.client.sendall(reply.to_bytes())
         return False
 
-    if cmd == 1:
-        command = ConnectCommand(conn, dst_addr, dst_port)
-        rep = command.connect_dst()
-        reply = Reply(ver, rep, rsv, atyp, dst_addr, dst_port).encode()
-        conn.sendall(reply)
+    if request.command == Command.CONNECT:
+        command = ConnectCommand(session.client, request.destination_host, request.destination_port)
+        reply_status = command.connect_dst()
+        reply = Reply(request.version, reply_status, request.reserved, request.address_type, request.destination_host, request.destination_port)
+        session.client.sendall(reply.to_bytes())
         command.forward()
 
     return True
