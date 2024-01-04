@@ -12,13 +12,16 @@ def validate(version, methods) -> int:
 
     """
     if version != General.VERSION:
-        return Method.NO_ACCEPTABLE_METHODS
+        return Method.NO_ACCEPTABLE_METHOD
     
     if Method.USERNAME_PASSWORD in methods:
         return Method.USERNAME_PASSWORD
+    
+    # if Method.NO_AUTHENTICATION_REQUIRED in methods:
+    #     return Method.NO_AUTHENTICATION_REQUIRED
 
     else:
-        return Method.NO_ACCEPTABLE_METHODS
+        return Method.NO_ACCEPTABLE_METHOD
 
 
 class Connection:
@@ -34,7 +37,7 @@ class Connection:
             method_chosen = validate(request.version, request.methods)                
             reply = ConnectionReply(version=request.version, method=method_chosen)
             self.session.client.sendall(reply.to_bytes())
-            if method_chosen == Method.NO_ACCEPTABLE_METHODS:
+            if method_chosen == Method.NO_ACCEPTABLE_METHOD:
                 self.session.client.close()
                 return False
             return True

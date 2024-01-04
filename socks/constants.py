@@ -1,4 +1,4 @@
-BUFFER_SIZE = 4096
+BUFFER_SIZE = 12288
 
 
 class General:

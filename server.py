@@ -16,7 +16,9 @@ def handle_client(client, address):
     if connection.connect() is True:
         session.notify_connection_success
         authentication = UsernamePasswordAuthentication(session)
-        if authentication.authenticate() is True:
+        session.is_auth = authentication.authenticate()
+        # session.is_auth = True
+        if session.is_auth is True:
             session.notify_authentication_success()
             handle_request(session)
         else:
