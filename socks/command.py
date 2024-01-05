@@ -33,6 +33,10 @@ def handle_request(session: Session):
         reply = Reply(request.version, reply_status, request.reserved, request.address_type, request.destination_host, request.destination_port)
         session.client.sendall(reply.to_bytes())
         command.forward()
+    elif request.command == Command.BIND:
+        print("THIS IS BIND COMMAND")
+    elif request.command == Command.UDP_ASSOCIATED:
+        print("THIS IS UDP ASSOCIATED COMMAND")
 
     return True
 
