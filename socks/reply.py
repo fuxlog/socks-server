@@ -1,4 +1,7 @@
 from .utils import bytes_address
+from .session import Session
+from .cryption import generate_key, encrypt_data
+import zlib
 
 
 class Reply:
@@ -31,5 +34,5 @@ class AuthenticationReply(Reply):
         self.version = version
         self.status = status
 
-    def to_bytes(self):
+    def to_bytes(self) -> bytes:
         return self.version.to_bytes(1, "big") + self.status.to_bytes(1, "big")

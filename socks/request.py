@@ -55,7 +55,7 @@ class Request:
 
 
 
-class ConnectionRequest(Request):
+class ConnectionRequest:
     def __init__(self):
         self.version = None
         self.methods = None
@@ -80,7 +80,7 @@ class ConnectionRequest(Request):
         return True
 
 
-class AuthenticationRequest(Request):
+class AuthenticationRequest:
     """ Format for authentication request
 
     VERSION: 1 byte
@@ -89,7 +89,6 @@ class AuthenticationRequest(Request):
     PLEN: 1 byte
     PWORD: 1 to 255 byte
     """
-
     def __init__(self):
         self.version = 0
         self.ulen = 0

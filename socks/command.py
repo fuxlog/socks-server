@@ -6,48 +6,73 @@ from .request import Request
 from .reply import Reply
 from .constants import BUFFER_SIZE, AddressType, ReplyStatus, Command, ReplyStatus
 from .session import Session
+from .cryption import send_encrypted, recv_decrypted, CryptoRequest, CryptoReply
 
 
 def handle_request(session: Session):
-    data = session.client.recv(BUFFER_SIZE)
-    if len(data) == 0:
+    data = recv_decrypted(session=session)
+    if data is None:
         print(f"[INFO] {session.address} closed connection")
         return False
     request = Request()
     check_request_status = request.from_bytes(data)
     if not session.is_auth:
-        reply = Reply(request.version, ReplyStatus.CONNECTION_NOT_ALLOWED_BY_RULESET, 
-                      request.reserved, request.address_type, request.destination_host, request.destination_port)
-        session.client.sendall(reply.to_bytes())
-        return False
+        session.client.close()
+        return 
     
-    if check_request_status != ReplyStatus.SUCCEEDED:
-        reply = Reply(request.version, check_request_status, 
-                      request.reserved, request.address_type, request.destination_host, request.destination_port)
-        session.client.sendall(reply.to_bytes())
+    if check_request_status != 0:
+        session.client.close()
         return False
 
     if request.command == Command.CONNECT:
         command = ConnectCommand(session, session.client, request.address_type, request.destination_host, request.destination_port)
         reply_status = command.connect_dst()
         reply = Reply(request.version, reply_status, request.reserved, request.address_type, request.destination_host, request.destination_port)
-        session.client.sendall(reply.to_bytes())
+        send_encrypted(session=session, message=reply.to_bytes())
         command.forward()
     elif request.command == Command.BIND:
         print("THIS IS BIND COMMAND")
     elif request.command == Command.UDP_ASSOCIATED:
         print("THIS IS UDP ASSOCIATED COMMAND")
 
-    return True
 
-
-def forward_data(src: socket.socket, dst: socket.socket):
-    data = src.recv(BUFFER_SIZE)
-    if not data:
+# Mode 1 is target to proxy to client
+# Mode 0 is client to target
+def forward_data(src: socket.socket, dst: socket.socket, session: Session, mode):
+    if not session.is_auth:
         return False
+
+    if mode == 0:
+        try:
+            bl_message = src.recv(2)
+            l_message = int.from_bytes(bl_message, "big")
+            message = src.recv(l_message)
+            if not message:
+                return False
+        
+            request = CryptoRequest(session=session)
+            if not request.from_bytes(message):
+                return False
+        
+            dst.sendall(request.data)
+        except socket.error:
+            return False
+    
     else:
-        dst.sendall(data)
-        return True
+        data = src.recv(BUFFER_SIZE)
+        if not data:
+            return False
+        
+        reply = CryptoReply(session=session)
+        try:
+            message = reply.to_bytes(data)
+            l_message = len(message)
+            dst.sendall(l_message.to_bytes(2, "big"))
+            dst.sendall(message)
+        except socket.error:
+            return False
+
+    return True
 
 
 class ConnectCommand:
@@ -86,9 +111,9 @@ class ConnectCommand:
             readable, _, _ = select.select(inputs, [], [])
             for ready_socket in readable:
                 if ready_socket == self.target_socket:
-                    success = forward_data(ready_socket, self.client_socket)
+                    success = forward_data(ready_socket, self.client_socket, self.session, 1)
                 if ready_socket == self.client_socket:
-                    success = forward_data(ready_socket, self.target_socket)
+                    success = forward_data(ready_socket, self.target_socket, self.session, 0)
                 if not success:
                     print(f"[INFO] {self.session.address} Connection closed forwarding tunnel")
                     self.target_socket.close()

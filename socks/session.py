@@ -1,4 +1,5 @@
 import socket
+from .constants import PUBLIC_KEY
 
 
 class Session:
@@ -6,6 +7,7 @@ class Session:
         self.client = client
         self.address = address
         self.is_auth = False
+        self.key = PUBLIC_KEY
 
     def notify(self):
         print(f"[INFO] Client {self.address} want to make connection")

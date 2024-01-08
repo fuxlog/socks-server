@@ -2,6 +2,7 @@ from .constants import BUFFER_SIZE, General, Method
 from .session import Session
 from .request import ConnectionRequest
 from .reply import ConnectionReply
+from .cryption import send_encrypted, recv_decrypted
 
 
 def validate(version, methods) -> int:
@@ -29,14 +30,13 @@ class Connection:
         self.session = session
 
     def connect(self):
-        data = self.session.client.recv(BUFFER_SIZE)
-        print(data)
+        data = recv_decrypted(session=self.session)
 
         request = ConnectionRequest()
         if request.from_bytes(data):
             method_chosen = validate(request.version, request.methods)                
             reply = ConnectionReply(version=request.version, method=method_chosen)
-            self.session.client.sendall(reply.to_bytes())
+            send_encrypted(session=self.session, message=reply.to_bytes())
             if method_chosen == Method.NO_ACCEPTABLE_METHOD:
                 self.session.client.close()
                 return False
@@ -44,6 +44,6 @@ class Connection:
 
         # Request format is not acceptable according to SOCKS5
         reply = ConnectionReply(version=General.VERSION, method=Method.NO_ACCEPTABLE_METHOD)
-        self.session.client.sendall(reply.to_bytes())
+        send_encrypted(self.session, message=reply.to_bytes())
         self.session.client.close()
         return False

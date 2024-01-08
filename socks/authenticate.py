@@ -3,6 +3,7 @@ from .constants import BUFFER_SIZE, General, AuthenticationStatus
 from .request import AuthenticationRequest
 from .reply import AuthenticationReply
 from .db import verify_account, save_account
+from .cryption import send_encrypted, recv_decrypted
 
 
 class Authentication:
@@ -23,14 +24,15 @@ class UsernamePasswordAuthentication(Authentication):
             print(f"[INFO] Client {self.session.address} already logged in")
             return
         
-        data = self.session.client.recv(BUFFER_SIZE)
+        data = recv_decrypted(self.session)
         request = AuthenticationRequest()
         if request.from_bytes(data) is True:
             if request.version == General.AUTHENTICATION_VERSION:
                 status = verify_account(request.uname, request.pword)
                 if status:
                     reply = AuthenticationReply(request.version, AuthenticationStatus.SUCCESS)
-                    self.session.client.sendall(reply.to_bytes())
+                    send_encrypted(session=self.session, message=reply.to_bytes())
+                    self.session.key = request.pword
                     return True
 
                 reply = AuthenticationReply(request.version, AuthenticationStatus.FAILURE)   
@@ -40,16 +42,16 @@ class UsernamePasswordAuthentication(Authentication):
                 status = save_account(request.uname, request.pword)
                 if status == 1:
                     reply = AuthenticationReply(request.version, AuthenticationStatus.SUCCESS)
-                    self.session.client.sendall(reply.to_bytes())
+                    send_encrypted(session=self.session, message=reply.to_bytes())
                     return True
                 
                 elif status == 2:
                     reply = AuthenticationReply(request.version, AuthenticationStatus.FAILURE)
-                    self.session.client.sendall(reply.to_bytes())
+                    send_encrypted(session=self.session, message=reply.to_bytes())
                     return False
 
 
         reply = AuthenticationReply(General.AUTHENTICATION_VERSION, AuthenticationStatus.FAILURE)
-        self.session.client.sendall(reply.to_bytes())
+        send_encrypted(session=self.session, message=reply.to_bytes())
         self.session.client.close()
         return False

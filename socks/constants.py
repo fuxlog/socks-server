@@ -1,4 +1,5 @@
 BUFFER_SIZE = 12288
+PUBLIC_KEY = "FUXLOG"
 
 
 class General:
