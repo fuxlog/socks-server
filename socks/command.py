@@ -7,6 +7,7 @@ from .reply import Reply
 from .constants import BUFFER_SIZE, AddressType, ReplyStatus, Command, ReplyStatus
 from .session import Session
 from .cryption import send_encrypted, recv_decrypted, CryptoRequest, CryptoReply
+from cryptography.exceptions import InvalidTag
 
 
 def handle_request(session: Session):
@@ -106,17 +107,23 @@ class ConnectCommand:
                 return ReplyStatus.GENERAL_SOCKS_SERVER_FAILURE
 
     def forward(self):
-        inputs = [self.client_socket, self.target_socket]
-        while inputs:
-            readable, _, _ = select.select(inputs, [], [])
-            for ready_socket in readable:
-                if ready_socket == self.target_socket:
-                    success = forward_data(ready_socket, self.client_socket, self.session, 1)
-                if ready_socket == self.client_socket:
-                    success = forward_data(ready_socket, self.target_socket, self.session, 0)
-                if not success:
-                    print(f"[INFO] {self.session.address} Connection closed forwarding tunnel")
-                    self.target_socket.close()
-                    break
-            if self.target_socket.fileno() == -1:
-                break
+        try:
+            if self.client_socket is None or self.target_socket is None:
+                return
+            
+            inputs = [self.client_socket, self.target_socket]
+            while inputs:
+                readable, _, _ = select.select(inputs, [], [])
+                for ready_socket in readable:
+                    if ready_socket == self.target_socket:
+                        success = forward_data(ready_socket, self.client_socket, self.session, 1)
+                    if ready_socket == self.client_socket:
+                        success = forward_data(ready_socket, self.target_socket, self.session, 0)
+                    if not success:
+                        print(f"[INFO] {self.session.address} Connection closed forwarding tunnel")
+                        self.target_socket.close()
+                        break
+                    if self.target_socket.fileno() == -1:
+                        break
+        except select.error as e:
+            print(e)
