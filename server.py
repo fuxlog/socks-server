@@ -6,10 +6,13 @@ from socks.authenticate import UsernamePasswordAuthentication
 from socks.command import handle_request
 from socks.constants import General
 from config import SERVER_HOST, SERVER_PORT, SERVER_BACKLOG
-
+import logging
 
 
 def handle_client(client, address):
+    logging.basicConfig(filename='server.log', level=logging.INFO)
+    logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
+
     session = Session(client=client, address=address)
     session.notify()
  
@@ -29,9 +32,16 @@ def handle_client(client, address):
         elif version == General.REGISTER_VERSION:
             if session.is_auth is False:
                 session.notify_register_failed()
-                return
-            session.notify_register_success()
-            handle_request(session)
+            else: 
+                session.notify_register_success()
+            return
+        
+        elif version == General.MODIFIED_VERSION:
+            if session.is_auth is False:
+                session.notify_modified_failed()
+            else:
+                session.notify_modified_success()
+            return
            
     else:
         session.notify_connection_failed()    

@@ -66,12 +66,12 @@ def change_password(username, new_password):
         return False
     if validate_password(new_password) is False:
         return False
-    else:
-        connection = sqlite3.connect(STORAGE)
-        cursor = connection.cursor()
-        query = "UPDATE account SET password = ? WHERE username = ?"
-        params = (new_password, username)
-        cursor.execute(query, params)
-        connection.commit()
-        connection.close()
-        return True
+    
+    connection = sqlite3.connect(STORAGE)
+    cursor = connection.cursor()
+    query = "UPDATE account SET password = ? WHERE username = ?"
+    params = (new_password, username)
+    cursor.execute(query, params)
+    connection.commit()
+    connection.close()
+    return True

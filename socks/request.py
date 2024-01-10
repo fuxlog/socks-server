@@ -95,7 +95,7 @@ class AuthenticationRequest:
         self.uname = None
         self.plen = 0
         self.pword = None
-
+        
     def from_bytes(self, data: bytes) -> bool:
         if len(data) < 5:
             return False
