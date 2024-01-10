@@ -1,4 +1,5 @@
 import sqlite3
+from .utils import validate_username, validate_password
 
 
 STORAGE = "storage/proxy.db"
@@ -28,7 +29,14 @@ def find_account_by_username(username: str) -> Account:
 def save_account(username: str, password: str) -> int:
     account = find_account_by_username(username)
     if account is not None:
-        return 2
+        return False
+    
+    if not validate_username(username):
+        return False
+    
+    if not validate_password(password):
+        return False
+    
     
     connection = sqlite3.connect(STORAGE)
     cursor = connection.cursor()
@@ -37,7 +45,7 @@ def save_account(username: str, password: str) -> int:
     cursor.execute(query, params)
     connection.commit()
     connection.close()
-    return 1
+    return True
 
 
 def verify_account(username, password):
@@ -50,3 +58,20 @@ def verify_account(username, password):
         else:
             return False
 
+
+
+def change_password(username, new_password):
+    account = find_account_by_username(username)
+    if account is None:
+        return False
+    if validate_password(new_password) is False:
+        return False
+    else:
+        connection = sqlite3.connect(STORAGE)
+        cursor = connection.cursor()
+        query = "UPDATE account SET password = ? WHERE username = ?"
+        params = (new_password, username)
+        cursor.execute(query, params)
+        connection.commit()
+        connection.close()
+        return True

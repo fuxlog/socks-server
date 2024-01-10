@@ -33,25 +33,25 @@ class UsernamePasswordAuthentication(Authentication):
                     reply = AuthenticationReply(request.version, AuthenticationStatus.SUCCESS)
                     send_encrypted(session=self.session, message=reply.to_bytes())
                     self.session.key = request.pword
-                    return True
+                    return True, request.version
 
                 reply = AuthenticationReply(request.version, AuthenticationStatus.FAILURE)   
                 
                 
             if request.version == General.REGISTER_VERSION:
                 status = save_account(request.uname, request.pword)
-                if status == 1:
+                if status:
                     reply = AuthenticationReply(request.version, AuthenticationStatus.SUCCESS)
                     send_encrypted(session=self.session, message=reply.to_bytes())
-                    return True
+                    return True, request.version
                 
-                elif status == 2:
+                else:
                     reply = AuthenticationReply(request.version, AuthenticationStatus.FAILURE)
                     send_encrypted(session=self.session, message=reply.to_bytes())
-                    return False
+                    return False, request.version
 
 
         reply = AuthenticationReply(General.AUTHENTICATION_VERSION, AuthenticationStatus.FAILURE)
         send_encrypted(session=self.session, message=reply.to_bytes())
         self.session.client.close()
-        return False
+        return False, General.AUTHENTICATION_VERSION

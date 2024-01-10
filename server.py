@@ -4,6 +4,7 @@ from socks.connection import Connection
 from socks.session import Session
 from socks.authenticate import UsernamePasswordAuthentication
 from socks.command import handle_request
+from socks.constants import General
 from config import SERVER_HOST, SERVER_PORT, SERVER_BACKLOG
 
 
@@ -11,19 +12,27 @@ from config import SERVER_HOST, SERVER_PORT, SERVER_BACKLOG
 def handle_client(client, address):
     session = Session(client=client, address=address)
     session.notify()
-
+ 
     connection = Connection(session)
     if connection.connect() is True:
         session.notify_connection_success
         authentication = UsernamePasswordAuthentication(session)
-        session.is_auth = authentication.authenticate()
-        # session.is_auth = True
-        if session.is_auth is True:
+        session.is_auth, version = authentication.authenticate()
+        # session.is_auth = True          
+        if version == General.AUTHENTICATION_VERSION:
+            if session.is_auth is False:
+                session.notify_authentication_failed()
+                return
             session.notify_authentication_success()
             handle_request(session)
-        else:
-            session.notify_authentication_failed()
-            return
+ 
+        elif version == General.REGISTER_VERSION:
+            if session.is_auth is False:
+                session.notify_register_failed()
+                return
+            session.notify_register_success()
+            handle_request(session)
+           
     else:
         session.notify_connection_failed()    
         return
