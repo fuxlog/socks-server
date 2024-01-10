@@ -126,4 +126,6 @@ class ConnectCommand:
                     if self.target_socket.fileno() == -1:
                         break
         except select.error as e:
-            print(e)
+            return
+        except ValueError as e:
+            return
