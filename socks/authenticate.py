@@ -17,11 +17,9 @@ class Authentication:
 class UsernamePasswordAuthentication(Authentication):
     def authenticate(self):
         if self.session.client.fileno == -1:
-            print(f"[INFO] Client {self.session.address} has close connection before")
             return
 
         if self.session.is_auth is True:
-            print(f"[INFO] Client {self.session.address} already logged in")
             return
         
         data = recv_decrypted(self.session)
