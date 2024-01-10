@@ -2,6 +2,7 @@
 import socket
 import errno
 import select
+import logging
 from .request import Request
 from .reply import Reply
 from .constants import BUFFER_SIZE, AddressType, ReplyStatus, Command, ReplyStatus
@@ -13,7 +14,8 @@ from cryptography.exceptions import InvalidTag
 def handle_request(session: Session):
     data = recv_decrypted(session=session)
     if data is None:
-        print(f"[INFO] {session.address} closed connection")
+        print(f"[INFO] {session.address[0]}:{session.address[1]} closed connection")
+        logging.warning(f"{session.address[0]}:{session.address[1]} closed connection")
         return False
     request = Request()
     check_request_status = request.from_bytes(data)
@@ -86,7 +88,8 @@ class ConnectCommand:
         self.dst_port = dst_port
 
     def connect_dst(self):
-        print(f"[INFO] {self.session.address} Connecting to destination {self.dst_addr}:{self.dst_port}")
+        print(f"[INFO] {self.session.address[0]}:{self.session.address[1]} connecting to destination {self.dst_addr}:{self.dst_port}")
+        logging.info(f"{self.session.address[0]}:{self.session.address[1]} connecting to destination {self.dst_addr}:{self.dst_port}")
         try:
             if self.atyp == AddressType.IPV4:
                 target = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -120,7 +123,8 @@ class ConnectCommand:
                     if ready_socket == self.client_socket:
                         success = forward_data(ready_socket, self.target_socket, self.session, 0)
                     if not success:
-                        print(f"[INFO] {self.session.address} Connection closed forwarding tunnel")
+                        print(f"[INFO] {self.session.address[0]}:{self.session.address[1]} closed forwarding to {self.dst_addr}:{self.dst_port}")
+                        logging.info(f"{self.session.address[0]}:{self.session.address[1]} closed forwarding to {self.dst_addr}:{self.dst_port}")
                         self.target_socket.close()
                         break
                     if self.target_socket.fileno() == -1:
