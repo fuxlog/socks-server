@@ -23,3 +23,15 @@ class Session:
     
     def notify_authentication_failed(self):
         print(f"[INFO] Client {self.address} login failed")
+
+    def notify_register_success(self):
+        print(f"[INFO] Client {self.address} register success")
+ 
+    def notify_register_failed(self):
+        print(f"[INFO] Client {self.address} register failed")
+ 
+    def notify_change_password_success(self):
+        print(f"[INFO] Client {self.address} change password success")
+ 
+    def notify_change_password_failed(self):
+        print(f"[INFO] Client {self.address} change password failed")
